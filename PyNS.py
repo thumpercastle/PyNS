@@ -26,13 +26,25 @@ def get_test_subjects():
     survey.add_log(log2, "P2")
     return survey, log1, log2
 
+def test_resi_summary():
+    log = Log("UA1_py.csv")
+    survey = Survey()
+    survey.add_log(log, "UA1")
+    return survey.resi_summary()
+
+def test_resi_summary_with_evening():
+    log = Log("UA1_py.csv")
+    survey = Survey()
+    survey.add_log(log, "UA1")
+    survey.set_periods(times={"day": (7, 0), "evening": (19, 0), "night": (23, 0)})
+    return survey.resi_summary()
+
 
 class Log:
     def __init__(self, path="", datetime_format=None):
         self._filepath = path
-        self._master = pd.read_csv(path, index_col="Time", parse_dates=["Time"],
-                                   date_parser=lambda col: pd.to_datetime(col, dayfirst=True, errors="coerce",
-                                                                          format=datetime_format))
+        self._master = pd.read_csv(path, index_col="Time", parse_dates=["Time"], dayfirst=True)
+        self._master.index = pd.to_datetime(self._master.index)
         self._master = self._master.sort_index(axis=1)
         self._start = self._master.index.min()
         self._end = self._master.index.max()
@@ -279,7 +291,6 @@ class Survey:
         return periods
 
     def resi_summary(self, leq_cols=None, max_cols=None, lmax_n=10, lmax_t="2min"):
-        #TODO: Doesn't present combined table properly if evenings enabled
         combi = pd.DataFrame()
         if leq_cols is None:
             leq_cols = [("Leq", "A")]
@@ -305,8 +316,11 @@ class Survey:
                 period_headers.append("Night-time")
             # Night max
             maxes = log.as_interval(t=lmax_t)
-            maxes = log.get_period(data=maxes, period="nights")
+            maxes = log.get_period(data=maxes, period="nights", night_idx=True)
             maxes = log.get_nth_high_low(n=lmax_n, data=maxes)[max_cols]
+            maxes.sort_index(inplace=True)
+            maxes.index = maxes.index.date
+            maxes.index.name = None
             combined_list.append(maxes)
             for i in range(len(max_cols)):
                 period_headers.append("Night-time")
