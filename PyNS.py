@@ -18,7 +18,7 @@ pd.set_option('display.max_columns', 20)
 
 DECIMALS = 1
 
-def get_test_subjects():
+def get_check_subjects():
     log1 = Log("Pos1_Parsed.csv")
     log2 = Log("Pos2_Parsed.csv")
     survey = Survey()
@@ -26,13 +26,13 @@ def get_test_subjects():
     survey.add_log(log2, "P2")
     return survey, log1, log2
 
-def test_resi_summary():
+def check_resi_summary():
     log = Log("UA1_py.csv")
     survey = Survey()
     survey.add_log(log, "UA1")
     return survey.resi_summary()
 
-def test_resi_summary_with_evening():
+def check_resi_summary_with_evening():
     log = Log("UA1_py.csv")
     survey = Survey()
     survey.add_log(log, "UA1")
@@ -41,7 +41,12 @@ def test_resi_summary_with_evening():
 
 
 class Log:
-    def __init__(self, path="", datetime_format=None):
+    def __init__(self, path=""):
+        """
+        The Log class is used to store the measured noise data from one data logger.
+        The data must be entered in a .csv file with headings in the specific format "Leq A", "L90 125" etc.
+        :param path: the file path for the .csv noise data
+        """
         self._filepath = path
         self._master = pd.read_csv(path, index_col="Time", parse_dates=["Time"], dayfirst=True)
         self._master.index = pd.to_datetime(self._master.index)
@@ -57,7 +62,7 @@ class Log:
         self.set_periods()
 
         # Prepare night-time indices and antilogs
-        self._antilogs = self._prep_antilogs()
+        self._antilogs = self._prep_antilogs()  # Use the antilogs dataframe as input to Leq calculations
         self._master = self._append_night_idx(data=self._master)
         self._antilogs = self._append_night_idx(data=self._antilogs)
 
@@ -77,9 +82,25 @@ class Log:
         self._master.sort_index(axis=1, level=1, inplace=True)
 
     def _prep_antilogs(self):
+        """
+        Private method creates a copy dataframe of master, but with dB sound pressure levels presented as antilogs.
+        This antilogs dataframe should be used if you want to undertake calculations of Leqs and similar.
+        :return:
+        """
         return self._master.copy().apply(lambda x: np.power(10, (x / 10)))
 
     def _append_night_idx(self, data=None):
+        """
+        Private method appends an additional column of the measurement date and time, but with the early morning
+        dates set to the day before.
+        e.g.
+        the measurement at 16-12-2024 23:57 would stay as is, but
+        the measurement at 17-12-2024 00:02 would have a night index of 16-12-2024 00:02
+        The logic behind this is that it allows us to process a night-time as one contiguous period, whereas
+        Pandas would otherwise treat the two measurements as separate because of their differing dates.
+        :param data:
+        :return:
+        """
         night_indices = data.index.to_list()
         if self._night_start > self._day_start:
             for i in range(len(night_indices)):
@@ -89,6 +110,12 @@ class Log:
         return data
 
     def _return_as_night_idx(self, data=None):
+        """
+        Private method to set the dataframe index as the night_idx. This is used when undertaking data processing for
+        night-time periods.
+        :param data:
+        :return:
+        """
         if ("Night idx", "") not in data.columns:
             raise Exception("No night indices in current DataFrame")
         return data.set_index("Night idx")
@@ -100,6 +127,13 @@ class Log:
             return df
 
     def _recompute_leq(self, data=None, t="15min", cols=None):
+        """
+        Private method to recompute shorter Leq measurements as longer ones.
+        :param data: Input data (should be in antilog format)
+        :param t: The desired Leq period
+        :param cols: Which columns of the input data do you wish to recompute?
+        :return:
+        """
         # Set default mutable args
         if data is None:
             data = self._antilogs
@@ -114,6 +148,12 @@ class Log:
         return self._none_if_zero(recomputed)
 
     def _recompute_night_idx(self, data=None, t="15min"):
+        """
+        Internal method to recompute night index column.
+        :param data: input dataframe to be recomputed
+        :param t: desired measurement period
+        :return: dataframe with night index column recomputed to the desired period
+        """
         if data is None:
             raise Exception("No DataFrame provided for night idx")
         if ("Night idx", "") in data.columns:
@@ -123,6 +163,20 @@ class Log:
             return data
 
     def _recompute_max(self, data=None, t="15min", pivot_cols=None, hold_spectrum=False):
+        """
+        Private method to recompute max readings from shorter to longer periods.
+        :param data: input data, usually self._master
+        :param t: desired measurement period
+        :param pivot_cols: how to choose the highest value - this will usually be "Lmax A". This is especially
+        important when you want to get specific octave band data for an Lmax event. If you wanted to recompute maxes
+        as the events with the highest values at 500 Hz, you could enter [("Lmax", 500)]. Caution: This functionality
+        has not been tested
+        :param hold_spectrum: if hold_spectrum, the dataframe returned will contain the highest value at each octave
+        band over the new measurement period, i.e. like the Lmax Hold setting on a sound level meter.
+        If hold_spectrum=false, the dataframe will contain the spectrum for the highest event around the pivot column,
+        i.e. the spectrum for that specific LAmax event
+        :return: returns a dataframe with the values recomputed to the desired measurement period.
+        """
         # Set default mutable args
         if pivot_cols is None:
             pivot_cols = [("Lmax", "A")]
@@ -164,14 +218,8 @@ class Log:
         elif period == "evenings":
             return data.between_time(self._evening_start, self._night_start, inclusive="left")
         elif period == "nights":
-            #print("data before night idx")
-            #print(data)
             if night_idx:
                 data = self._return_as_night_idx(data=data)
-                #print("data after night idx")
-                #print(data)
-                #print("data between time")
-                #print(data.between_time(self._night_start, self._day_start, inclusive="left"))
             return data.between_time(self._night_start, self._day_start, inclusive="left")
 
     def leq_by_date(self, data, cols=None):
@@ -193,11 +241,8 @@ class Log:
             leq_cols = ["Leq", "L90"]
         if max_pivots is None:
             max_pivots = [("Lmax", "A")]
-        # if min_pivots is None:
-        #     min_pivots = []
         leq = self._recompute_leq(data=antilogs, t=t, cols=leq_cols)
         maxes = self._recompute_max(data=data, t=t, pivot_cols=max_pivots, hold_spectrum=hold_spectrum)
-        # mins = self._recompute_min(data=data, t=t, pivot_cols=min_pivots, hold_spectrum=hold_spectrum)
         conc = pd.concat([leq, maxes], axis=1).sort_index(axis=1).dropna(axis=1, how="all")
         conc = self._append_night_idx(data=conc)    # Re-append night indices
         return conc.dropna(axis=0, how="all")
