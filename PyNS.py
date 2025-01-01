@@ -709,3 +709,6 @@ class Reporter:
     # comment
     def test(self):
         return None
+
+    def test2(self):
+        return None
