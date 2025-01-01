@@ -705,3 +705,7 @@ class Reporter:
         assert path is not None
         path = os.path.join(path, filename)
         self.doc.save(path)
+
+    # comment
+    def test(self):
+        return None
