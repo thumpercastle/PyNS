@@ -35,7 +35,7 @@ The library is not currently available through pip or Anaconda (we're working on
    ```
 4. **Analyse the Survey Data**
    The following are methods of the Survey() object representing the typical use cases for acoustic consultants in the UK.
-   ### Survey.resi_summary()\
+   ### Survey.resi_summary()
    This method provides a summary of the measurement data for residential projects, with a focus on typical assessment procedures in the UK.
    It presents A-weighted Leqs for each day and night period (and evenings, if enabled), as well as the nth-highest LAmax during each night-time period.
    Optional arguments are:\
