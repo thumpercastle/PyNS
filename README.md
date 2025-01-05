@@ -14,6 +14,13 @@ The library is not currently available through pip or Anaconda (we're working on
 
 ## Usage
 ### Basic Workflow
+**Before you start**
+Make sure your input data is in the correct format. See the file UA1_py.csv for reference. Namely:
+- Your data must be in .csv format.
+- Timestamps should ideally be in the format dd-mm-yyyy hh:mm, other formats may work, but their performance is not tried and tested.
+- Column headers should be in the Tuple-like format as per the example csv files attached. The measurement index should be first, and the frequency band or weighting should be second. e.g. the LAeq column should have the header *"Leq A"*, the L90 column at 125 Hz should have the header *"L90 125"*, and so on.
+- Make sure you past your data and columns into a fresh csv tab. If you end up having to chop the data and delete columns or rows, repaste it into a fresh tab when it is ready to be presented to the toolkit. Failure to do so can result in a ValueError. See **Troubleshooting** below.
+- If you do use this toolkit, please attribute it appropriately, and carry out your own checks to ensure you are satisfied with the outputs. See **Terms of Use** below.
 1. **Import the library**\
    Import the library into your script or active console.
    ```
