@@ -67,7 +67,7 @@ Make sure your input data is in the correct format. See the file UA1_py.csv for 
 - Lmax night-time timestamps can sometimes by out by a minute.
 ## Troubleshooting
 ### ValueError: NaTType does not support time
-This error occurs when the source csv file contains empty cells. It usually occurs when you have entered data into some row(s) or column(s) and then deleted it, leaving previously-full cells which are now empty.\
+This error occurs when trying to create a Log() object with a csv file. It occurs because the source csv file contains empty cells which were previously allocated (filled). It usually happens when you have entered data into some row(s) or column(s) and then deleted it, leaving previously-full cells which are now empty.\
 **Solution:** Create a new tab in your source csv file, and paste in your headers and data as you wish it to be presented to the toolkit, avoiding having to delete any columns and rows. Delete the old tab. If you do have to delete any data in the new tab, you will need to repeat the process to ensure this error is not thrown up again.
 
 ## Terms of use
