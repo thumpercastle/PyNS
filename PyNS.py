@@ -1,10 +1,9 @@
 import os
-import docx
 import pandas as pd
 import numpy as np
 import datetime as dt
-from docx.shared import Cm
-from docx.enum.section import WD_SECTION, WD_ORIENTATION
+import openpyxl as xl
+
 
 # TODO: Implement thirds to octaves
 # TODO: Implement Plotter class
@@ -495,7 +494,7 @@ class Survey:
         combi = self._insert_header(df=combi, new_head_list=period_headers, header_idx=0)
         return combi
 
-    def get_modal_l90(self, cols=None, by_date=True, day_t="60min", evening_t="60min", night_t="15min"):
+    def modal_l90(self, cols=None, by_date=True, day_t="60min", evening_t="60min", night_t="15min"):
         """
         Get a dataframe summarising Modal L90 values for each time period, as suggested by BS 4142:2014.
         Currently, this method rounds the values to 0 decimal places by default and there is no alternative
@@ -543,7 +542,7 @@ class Survey:
         combi = self._insert_header(df=combi, new_head_list=period_headers, header_idx=0)
         return combi
 
-    def get_lmax_spectra(self, n=10, t="2min", period="nights"):
+    def lmax_spectra(self, n=10, t="2min", period="nights"):
         """
         Get spectral data for the nth-highest Lmax values during a given time period.
         This computes Lmax Event spectra. Lmax Hold spectra has not yet been implemented.
@@ -574,7 +573,7 @@ class Survey:
 
     # TODO: get_lowest_l90
 
-    def get_typical_leq_spectra(self, leq_cols=None):
+    def typical_leq_spectra(self, leq_cols=None):
         """
         Compute Leqs over daytime, evening and night-time periods.
         This is an overall Leq, and does not group Leqs by date.
@@ -620,95 +619,30 @@ class Survey:
         return combi
 
 # Reporter class is a Work In Progress. This class is intended to take a Survey object
-# and export chosen outputs to a Microsoft Word doc.
+# and export chosen outputs to a Microsoft Excel doc.
 class Reporter:
     """
     This class is a work in progress and currently not functional.
     """
     def __init__(self):
-        # Initialise the Word file
-        self.doc = docx.Document()
+        # Initialise the Excel workbook
+        self.wb =xl.Workbook()
 
-    def spectral_table(self, data, heading=None, decimals=0, dba_alignment="left"):
-        #TODO: Format the column headers
-        # Add the table heading
-        assert heading is not None
-        self.doc.add_heading(heading, 1)
-        # Remove decimal points and 0
-        data = data.round(decimals=decimals)
-        #TODO: Move A-weighted columns to right
+    def table(self, data, title=None, decimals=0):
+        assert title is not None
+        data = data.round(decimals=decimals)    # Round data to decimals
+        ws = self.wb.create_sheet(title=title)  # Create a new worksheet for this table
+        # Loop through the rows and append them to the worksheet.
+        for r in xl.dataframe_to_rows(df, index=True, header=True):
+            ws.append(r)
 
-        # Initialise the table
-        table = self.doc.add_table(rows=(data.shape[0] + 1), cols=data.shape[1] + 2, style="Table Grid")
-        # table.style.TableGrid   # Add in borders
-        # Add dates in first column
-        table.cell(0, 0).text = "Position"  # Label first column
-        table.cell(0, 1).text = "Date"
-        ind = data.index.tolist()
+    def summarise_survey(self, survey, decimals=0, **kwargs):
+        """
+        Create a summary of the survey in Microsoft Excel.
 
-        # Loop over the DataFrame and assign data to the Word Table
-        # Position names
-        for i in range(data.shape[0]):    # For each row
-            current_cell = table.cell(i + 1, 0)
-            prev_cell = table.cell(i, 0)
-            if prev_cell.text == str(ind[i][0]):
-                prev_cell.merge(current_cell)
-            else:
-                current_cell.text = str(ind[i][0])
-        #TODO: convert floats to ints
-
-        # Dates
-            table.cell(i + 1, 1).text = str(ind[i][1])
-            for j in range(data.shape[1]):  # Go through each column
-                # Add column headings
-                heading = str(data.columns[j][1])  # Remove index params from spectral column headings
-                if len(data.columns) == 1:  # This occurs if dba_only=True
-                    heading = str(data.columns[j])
-                if ".0" in heading:  # Remove decimals from frequency headings, but keep where relevant (31.5)
-                    heading = heading.split(".")[0]
-                table.cell(0, j + 2).text = heading
-                # And assign the values in the table.
-                cell = data.iat[i, j]
-
-                # TODO:
-    #             Traceback(most
-    #             recent
-    #             call
-    #             last):
-    #             File
-    #             "C:\Users\tonyr\anaconda3\envs\NoiseSurvey\lib\code.py", line
-    #             90, in runcode
-    #             exec(code, self.locals)
-    #         File
-    #         "<input>", line
-    #         1, in < module >
-    #         File
-    #         "C:\Users\tonyr\MSc_Python\NoiseSurvey\PyNS.py", line
-    #         494, in spectral_table
-    #         if np.isnan(cell):
-    #
-    # TypeError: ufunc
-    # 'isnan'
-    # not supported
-    # for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
-
-                try:
-                    if np.isnan(cell):
-                        cell = "-"
-                finally:
-                    if isinstance(cell, float) and decimals == 0:
-                        cell = int(cell)
-                table.cell(i + 1, j + 2).text = str(cell)
-
-    def export(self, path=None, filename="results.docx"):
-        # TODO: implement this into Survey object
-        assert path is not None
-        path = os.path.join(path, filename)
-        self.doc.save(path)
-
-    # comment
-    def test(self):
-        return None
-
-    def test2(self):
+        :param survey:
+        :param decimals:
+        :param kwargs:
+        :return:
+        """
         return None
