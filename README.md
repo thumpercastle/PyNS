@@ -43,16 +43,17 @@ The library is not currently available through pip or Anaconda (we're working on
    **max_cols** *List of tuples* *(default [("Leq", "A")]* Which column(s) you want to present as an nth-highest value - this can be any column.\
    **lmax_n** *Int* *(default 10)* The nth-highest value to present.\
    **lmax_t** *Str* *(default "2min")* The time period T over which Lmaxes are presented. This must be equal to or longer than the period of the raw data.\
-   \
-   ### Survey.get_modal_l90()\
-   \
-   ### Survey.get_lmax_spectra()\
+   
+   ### Survey.get_modal_l90()
+   Compute the modal L90 for daytime, evening (if enabled) and night-time periods. By default, this is set to T=60min for (23:00 to 07:00) periods, and T=15min for night-time (23:00 to 07:00) periods, as per BS 4142:2014.
+   
+   ### Survey.get_lmax_spectra()
    Compute the Lmax Event spectra for the nth-highest Lmax during each night-time period.\
    **Note** the date presented alongside the Lmax event is actually the starting date of the night-time period. i.e. an Lmax event with a stamp of 20/12/2024 at 01:22 would actually have occurred on 21/12/2024 at 01:22. These stamps can also sometimes be out by a minute (known bug).
    \
-   ### Survey.get_typical_leq_spectra()\
+   ### Survey.get_typical_leq_spectra()
    Compute the Leq spectra for daytime, evening (if enabled) and night-time periods. This will present the overall Leqs across the survey, not the Leq for each day.
-   \
+   
 
 ### Other methods
 The following are methods of the Survey() object which may also be of use\
@@ -63,7 +64,7 @@ The following are methods of the Survey() object which may also be of use\
 This error occurs when the source csv file contains empty cells. It usually occurs when you have entered data into some row(s) or column(s) and then deleted it, leaving previously-full cells which are now empty.\
 **Solution:** Create a new tab in your source csv file, and paste in your headers and data as you wish it to be presented to the toolkit, avoiding having to delete any columns and rows. Delete the old tab. If you do have to delete any data in the new tab, you will need to repeat the process to ensure this error is not thrown up again.
 
-### Terms of use
+## Terms of use
 The PyNS toolkit was built by Tony Trup of [Timbral(https://www.timbral.co.uk)].
 I accept no liability for the outputs of this toolkit. You use it at your own risk, and you should carry out your own checks and balances to ensure you are satistfied that the output is accurate.
 This is an open source project, and I welcome suggestions for changes, improvements or new features. You can also write your own methods or functions and share them with me, either by getting in touch offline, or by creating a new branch from this Git repository.
