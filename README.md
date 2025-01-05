@@ -64,7 +64,7 @@ This error occurs when the source csv file contains empty cells. It usually occu
 **Solution:** Create a new tab in your source csv file, and paste in your headers and data as you wish it to be presented to the toolkit, avoiding having to delete any columns and rows. Delete the old tab. If you do have to delete any data in the new tab, you will need to repeat the process to ensure this error is not thrown up again.
 
 ## Terms of use
-The PyNS toolkit was built by Tony Trup of [Timbral(https://www.timbral.co.uk)].
+The PyNS toolkit was built by Tony Trup of [Timbral (https://www.timbral.co.uk)].
 I accept no liability for the outputs of this toolkit. You use it at your own risk, and you should carry out your own checks and balances to ensure you are satistfied that the output is accurate.
 This is an open source project, and I welcome suggestions for changes, improvements or new features. You can also write your own methods or functions and share them with me, either by getting in touch offline, or by creating a new branch from this Git repository.
 You may use this toolkit subject to the licence conditions below. For clarity, you may use this toolkit or adaptations of it in your day-to-day engineering work, but incorporating it into a commercial software product or service is not permitted.
