@@ -29,21 +29,44 @@ The library is not currently available through pip or Anaconda (we're working on
    The data from multiple measurement positions can be combined together within a Survey object.
    First we need to create a Survey object, and then add each Log one at a time.
    ```
-   survey = Survey()
-   survey.add_log(data=log1, name="Position 1")
-   survey.add_log(data=log2, name="Position 2")
+   surv = Survey()
+   surv.add_log(data=log1, name="Position 1")
+   surv.add_log(data=log2, name="Position 2")
    ```
 4. **Analyse the Survey Data**\
-   ### Resi Summary\
-   The survey.resi_summary() method provides a summary of the measurement data for residential projects, with a focus on typical assessment procedures in the UK.
+   The following are methods of the Survey() object representing the typical use cases for acoustic consultants in the UK.
+   ### Survey.resi_summary()\
+   This method provides a summary of the measurement data for residential projects, with a focus on typical assessment procedures in the UK.
    It presents A-weighted Leqs for each day and night period (and evenings, if enabled), as well as the nth-highest LAmax during each night-time period.
    Optional arguments are:\
-   **leq_cols** *List of tuples* *(default [("Leq", "A")]* Which column(s) you want to present as Leqs - this can be any Leq or statistical column.
-   **max_cols** *(default A)* Which column(s) you want to present as an nth-highest value - this can be any column.
-   **lmax_n** (default 10)*
+   **leq_cols** *List of tuples* *(default [("Leq", "A")]* Which column(s) you want to present as Leqs - this can be any Leq or statistical column.\
+   **max_cols** *List of tuples* *(default [("Leq", "A")]* Which column(s) you want to present as an nth-highest value - this can be any column.\
+   **lmax_n** *Int* *(default 10)* The nth-highest value to present.\
+   **lmax_t** *Str* *(default "2min")* The time period T over which Lmaxes are presented. This must be equal to or longer than the period of the raw data.\
+   \
+   ### Survey.get_modal_l90()\
+   \
+   ### Survey.get_lmax_spectra()\
+   Compute the Lmax Event spectra for the nth-highest Lmax during each night-time period.\
+   **Note** the date presented alongside the Lmax event is actually the starting date of the night-time period. i.e. an Lmax event with a stamp of 20/12/2024 at 01:22 would actually have occurred on 21/12/2024 at 01:22. These stamps can also sometimes be out by a minute (known bug).
+   \
+   ### Survey.get_typical_leq_spectra()\
+   Compute the Leq spectra for daytime, evening (if enabled) and night-time periods. This will present the overall Leqs across the survey, not the Leq for each day.
+   \
+
+### Other methods
+The following are methods of the Survey() object which may also be of use\
+### Known issues
+- Lmax night-time timestamps can sometimes by out by a minute.\
+## Troubleshooting
+### ValueError: NaTType does not support time
+This error occurs when the source csv file contains empty cells. It usually occurs when you have entered data into some row(s) or column(s) and then deleted it, leaving previously-full cells which are now empty.\
+**Solution:** Create a new tab in your source csv file, and paste in your headers and data as you wish it to be presented to the toolkit, avoiding having to delete any columns and rows. Delete the old tab. If you do have to delete any data in the new tab, you will need to repeat the process to ensure this error is not thrown up again.
 
 ### Terms of use
-This is an open source project, and I am open to suggestions for changes, improvements or new features.
+The PyNS toolkit was built by Tony Trup of [Timbral(https://www.timbral.co.uk)].
+I accept no liability for the outputs of this toolkit. You use it at your own risk, and you should carry out your own checks and balances to ensure you are satistfied that the output is accurate.
+This is an open source project, and I welcome suggestions for changes, improvements or new features. You can also write your own methods or functions and share them with me, either by getting in touch offline, or by creating a new branch from this Git repository.
 You may use this toolkit subject to the licence conditions below. For clarity, you may use this toolkit or adaptations of it in your day-to-day engineering work, but incorporating it into a commercial software product or service is not permitted.
 This project is being shared under a [Creative Commons CC BY-NC-SA 4.0 Licence (https://creativecommons.org/licenses/by-nc-sa/4.0/)].
 Attribution — You must give appropriate credit , provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
