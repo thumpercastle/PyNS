@@ -2,6 +2,12 @@
 ## Overview
 PyNS is a Python-based toolkit designed to assist acoustic consultants and engineers in analyzing noise survey data. The library provides various tools and utilities for processing, interpreting, and visualizing noise measurements.
 
+## Requirements
+This toolkit was written in Python 3.10, and using the following packages.
+- pandas 2.2.3
+- numpy 2.1.3
+- python-docx 0.8.11 (not currently implemented and will be updated).
+
 ## Features
 - Import and process noise survey data from .csv files
 - Analyse and recompute sound levels and statistical meausres (Leq, Lmax, L90 etc.)
