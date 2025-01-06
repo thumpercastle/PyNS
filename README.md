@@ -57,14 +57,14 @@ Make sure your input data is in the correct format. See the file UA1_py.csv for 
    **lmax_n** *Int* *(default 10)* The nth-highest value to present.\
    **lmax_t** *Str* *(default "2min")* The time period T over which Lmaxes are presented. This must be equal to or longer than the period of the raw data.
    
-   ### Survey.get_modal_l90()
+   ### Survey.modal_l90()
    Compute the modal L90 for daytime, evening (if enabled) and night-time periods. By default, this is set to T=60min for (23:00 to 07:00) periods, and T=15min for night-time (23:00 to 07:00) periods, as per BS 4142:2014.
    
-   ### Survey.get_lmax_spectra()
+   ### Survey.lmax_spectra()
    Compute the Lmax Event spectra for the nth-highest Lmax during each night-time period.\
    **Note** the date presented alongside the Lmax event is actually the starting date of the night-time period. i.e. an Lmax event with a stamp of 20/12/2024 at 01:22 would actually have occurred on 21/12/2024 at 01:22. These stamps can also sometimes be out by a minute (known bug).
    
-   ### Survey.get_typical_leq_spectra()
+   ### Survey.typical_leq_spectra()
    Compute the Leq spectra for daytime, evening (if enabled) and night-time periods. This will present the overall Leqs across the survey, not the Leq for each day.
    
 
