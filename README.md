@@ -71,6 +71,7 @@ Make sure your input data is in the correct format. See the file UA1_py.csv for 
 ### Other methods
 ### Known issues
 - Lmax night-time timestamps can sometimes by out by a minute.
+- modal_L90 keyword 'cols' does not work due to headers not being properly allocated.
 ## Troubleshooting
 ### ValueError: NaTType does not support time
 This error occurs when trying to create a Log() object with a csv file. It occurs because the source csv file contains empty cells which were previously allocated (filled). It usually happens when you have entered data into some row(s) or column(s) and then deleted it, leaving previously-full cells which are now empty.\
