@@ -4,7 +4,6 @@ import numpy as np
 import datetime as dt
 import openpyxl as xl
 
-
 # TODO: Implement thirds to octaves
 # TODO: Implement Plotter class
 # TODO: Implement WeatherReporter class
@@ -241,6 +240,13 @@ class Log:
         return data[cols].groupby(data.index.date).mean().apply(lambda x: np.round((10 * np.log10(x)), self._decimals))
 
     # ###########################---PUBLIC---######################################
+    # ss++
+    def get_data(self): 
+        """
+        # Returns a dataframe of the loaded csv
+        """        
+        return self._master
+    #ss--
 
     def get_antilogs(self):
         return self._antilogs
@@ -483,7 +489,15 @@ class Survey:
             maxes = log._get_period(data=maxes, period="nights", night_idx=True)
             maxes = log.get_nth_high_low(n=lmax_n, data=maxes)[max_cols]
             maxes.sort_index(inplace=True)
-            maxes.index = maxes.index.date
+            #  +++
+            # SS Feb2025  - Code changed to prevent exception
+            #maxes.index = maxes.index.date
+            try:
+                maxes.index = pd.to_datetime(maxes.index)
+                maxes.index = maxes.index.date
+            except Exception as e:
+                print(f"Error converting index to date: {e}")      
+            # SSS ---
             maxes.index.name = None
             combined_list.append(maxes)
             for i in range(len(max_cols)):
