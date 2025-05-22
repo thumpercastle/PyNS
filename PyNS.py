@@ -17,6 +17,7 @@ pd.set_option('display.max_columns', 20)
 
 DECIMALS = 1
 
+
 def get_check_subjects():
     log1 = Log("Pos1_Parsed.csv")
     log2 = Log("Pos2_Parsed.csv")
@@ -58,13 +59,12 @@ class Log:
         self._night_start = None
         self._day_start = None
         self._evening_start = None
-        self.set_periods()
+        self._init_periods()
 
         # Prepare night-time indices and antilogs
         self._antilogs = self._prep_antilogs()  # Use the antilogs dataframe as input to Leq calculations
         self._master = self._append_night_idx(data=self._master)
         self._antilogs = self._append_night_idx(data=self._antilogs)
-
         self._decimals = 1
 
     def _assign_header(self):
@@ -224,6 +224,26 @@ class Log:
                 data = self._return_as_night_idx(data=data)
             return data.between_time(self._night_start, self._day_start, inclusive="left")
 
+    def _init_periods(self, times=None):
+        """
+        Set the daytime, night-time and evening periods. To disable evening periods, simply set it the same
+        as night-time.
+        :param times: A dictionary with strings as keys and integer tuples as values.
+        The first value in the tuple represents the hour of the day that period starts at (24hr clock), and the
+        second value represents the minutes past the hour.
+        e.g. for daytime from 07:00 to 19:00, evening 19:00 to 23:00 and night-time 23:00 to 07:00,
+        times = {"day": (7, 0), "evening": (19, 0), "night": (23, 0)}
+        NOTES:
+        Night-time must cross over midnight. (TBC experimentally).
+        Evening must be between daytime and night-time. To
+        :return: None.
+        """
+        if times is None:
+            times = {"day": (7, 0), "evening": (23, 0), "night": (23, 0)}
+        self._day_start = dt.time(times["day"][0], times["day"][1])
+        self._evening_start = dt.time(times["evening"][0], times["evening"][1])
+        self._night_start = dt.time(times["night"][0], times["night"][1])
+
     def _leq_by_date(self, data, cols=None):
         """
         Private method to undertake Leq calculations organised by date. For contiguous night-time periods crossing
@@ -356,11 +376,12 @@ class Log:
         self._day_start = dt.time(times["day"][0], times["day"][1])
         self._evening_start = dt.time(times["evening"][0], times["evening"][1])
         self._night_start = dt.time(times["night"][0], times["night"][1])
-        warnings.warn("Warning: Leq calculations with periods other than the defaults are currently innacurate. Calculate manually. Default periods are Daytime 0700 to 2300, Night-time 2300 to 0700")
 
-
-
-
+        # Prepare night-time indices and antilogs
+        self._master.drop(labels="Night idx", axis=1, inplace=True, level=0)
+        self._antilogs.drop(labels="Night idx", axis=1, inplace=True, level=0)
+        self._master = self._append_night_idx(data=self._master)
+        self._antilogs = self._append_night_idx(data=self._antilogs)
 
     def get_period_times(self):
         """
@@ -424,6 +445,7 @@ class Survey:
             times = {"day": (7, 0), "evening": (23, 0), "night": (23, 0)}
         for key in self._logs.keys():
             self._logs[key].set_periods(times=times)
+
 
     def add_log(self, data=None, name=""):
         """
