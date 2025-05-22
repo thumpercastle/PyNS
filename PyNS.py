@@ -1,4 +1,5 @@
 import os
+import warnings
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -355,6 +356,11 @@ class Log:
         self._day_start = dt.time(times["day"][0], times["day"][1])
         self._evening_start = dt.time(times["evening"][0], times["evening"][1])
         self._night_start = dt.time(times["night"][0], times["night"][1])
+        warnings.warn("Warning: Leq calculations with periods other than the defaults are currently innacurate. Calculate manually. Default periods are Daytime 0700 to 2300, Night-time 2300 to 0700")
+
+
+
+
 
     def get_period_times(self):
         """
