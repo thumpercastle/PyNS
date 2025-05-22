@@ -6,6 +6,7 @@ PyNS is a Python-based toolkit designed to assist acoustic consultants and engin
 This toolkit was written in Python 3.10, and using the following packages.
 - pandas 2.2.3
 - numpy 2.1.3
+- openpyxl 3.1.5
 - python-docx 0.8.11 (not currently implemented and will be updated).
 
 ## Features

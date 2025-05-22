@@ -1,9 +1,12 @@
 import os
-import warnings
 import pandas as pd
 import numpy as np
 import datetime as dt
 import openpyxl as xl
+import warnings
+
+# Ignore performance warnings (relevant to Night idx dropping)
+warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 # TODO: Implement thirds to octaves
 # TODO: Implement Plotter class
@@ -16,7 +19,6 @@ pd.set_option('display.max_rows', 20)
 pd.set_option('display.max_columns', 20)
 
 DECIMALS = 1
-
 
 def get_check_subjects():
     log1 = Log("Pos1_Parsed.csv")
@@ -65,6 +67,7 @@ class Log:
         self._antilogs = self._prep_antilogs()  # Use the antilogs dataframe as input to Leq calculations
         self._master = self._append_night_idx(data=self._master)
         self._antilogs = self._append_night_idx(data=self._antilogs)
+
         self._decimals = 1
 
     def _assign_header(self):
@@ -79,6 +82,13 @@ class Log:
                 continue
         self._master.columns = [superheaders, subheaders]
         self._master.sort_index(axis=1, level=1, inplace=True)
+
+    def _init_periods(self):
+        times = {"day": (7, 0), "evening": (23, 0), "night": (23, 0)}
+        self._day_start = dt.time(times["day"][0], times["day"][1])
+        self._evening_start = dt.time(times["evening"][0], times["evening"][1])
+        self._night_start = dt.time(times["night"][0], times["night"][1])
+
 
     def _prep_antilogs(self):
         """
@@ -224,26 +234,6 @@ class Log:
                 data = self._return_as_night_idx(data=data)
             return data.between_time(self._night_start, self._day_start, inclusive="left")
 
-    def _init_periods(self, times=None):
-        """
-        Set the daytime, night-time and evening periods. To disable evening periods, simply set it the same
-        as night-time.
-        :param times: A dictionary with strings as keys and integer tuples as values.
-        The first value in the tuple represents the hour of the day that period starts at (24hr clock), and the
-        second value represents the minutes past the hour.
-        e.g. for daytime from 07:00 to 19:00, evening 19:00 to 23:00 and night-time 23:00 to 07:00,
-        times = {"day": (7, 0), "evening": (19, 0), "night": (23, 0)}
-        NOTES:
-        Night-time must cross over midnight. (TBC experimentally).
-        Evening must be between daytime and night-time. To
-        :return: None.
-        """
-        if times is None:
-            times = {"day": (7, 0), "evening": (23, 0), "night": (23, 0)}
-        self._day_start = dt.time(times["day"][0], times["day"][1])
-        self._evening_start = dt.time(times["evening"][0], times["evening"][1])
-        self._night_start = dt.time(times["night"][0], times["night"][1])
-
     def _leq_by_date(self, data, cols=None):
         """
         Private method to undertake Leq calculations organised by date. For contiguous night-time periods crossing
@@ -262,10 +252,10 @@ class Log:
 
     # ###########################---PUBLIC---######################################
     # ss++
-    def get_data(self): 
+    def get_data(self):
         """
         # Returns a dataframe of the loaded csv
-        """        
+        """
         return self._master
     #ss--
 
@@ -376,10 +366,9 @@ class Log:
         self._day_start = dt.time(times["day"][0], times["day"][1])
         self._evening_start = dt.time(times["evening"][0], times["evening"][1])
         self._night_start = dt.time(times["night"][0], times["night"][1])
-
-        # Prepare night-time indices and antilogs
-        self._master.drop(labels="Night idx", axis=1, inplace=True, level=0)
-        self._antilogs.drop(labels="Night idx", axis=1, inplace=True, level=0)
+        # Recompute night indices
+        self._master.drop(labels="Night idx", axis=1, inplace=True)
+        self._antilogs.drop(labels="Night idx", axis=1, inplace=True)
         self._master = self._append_night_idx(data=self._master)
         self._antilogs = self._append_night_idx(data=self._antilogs)
 
@@ -445,7 +434,6 @@ class Survey:
             times = {"day": (7, 0), "evening": (23, 0), "night": (23, 0)}
         for key in self._logs.keys():
             self._logs[key].set_periods(times=times)
-
 
     def add_log(self, data=None, name=""):
         """
@@ -524,7 +512,7 @@ class Survey:
                 maxes.index = pd.to_datetime(maxes.index)
                 maxes.index = maxes.index.date
             except Exception as e:
-                print(f"Error converting index to date: {e}")      
+                print(f"Error converting index to date: {e}")
             # SSS ---
             maxes.index.name = None
             combined_list.append(maxes)
