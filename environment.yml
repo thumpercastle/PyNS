@@ -1,7 +1,0 @@
-name: PyNS
-dependencies:
-  - python=3.10
-  - docx
-  - pandas=2.2.2
-  - numpy=1.26.4
-  - TKInter - 8.6
