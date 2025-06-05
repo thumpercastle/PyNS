@@ -27,7 +27,7 @@ if "period_last" not in st.session_state:
     st.session_state["period_last"] = ""
 
 with st.sidebar:
-    st.logo("/Users/jacktunstall/Documents/PyNS/logo.png",size="large")
+    st.logo("Logo.png",size="large")
     # File Upload in expander container
     with st.expander("File Upload", expanded=True):
         files = st.file_uploader(
