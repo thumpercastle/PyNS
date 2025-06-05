@@ -21,11 +21,11 @@ pd.set_option('display.max_columns', 20)
 DECIMALS = 1
 
 def get_check_subjects():
-    log1 = Log("Pos1_Parsed.csv")
-    log2 = Log("Pos2_Parsed.csv")
+    log1 = Log(r"example_data\UA1_py.csv")
+    log2 = Log(r"example_data\UA2_py.csv")
     survey = Survey()
-    survey.add_log(log1, "P1")
-    survey.add_log(log2, "P2")
+    survey.add_log(log1, "UA1")
+    survey.add_log(log2, "UA2")
     return survey, log1, log2
 
 def check_resi_summary():
@@ -603,7 +603,7 @@ class Survey:
 
     # TODO: get_lowest_l90
 
-    def typical_leq_spectra(self, leq_cols=None):
+    def leq_spectra(self, leq_cols=None):
         """
         Compute Leqs over daytime, evening and night-time periods.
         This is an overall Leq, and does not group Leqs by date.
@@ -611,42 +611,76 @@ class Survey:
         For all Leq columns, use ["Leq"]. For specific columns, use list of tuples [("Leq", "A"), ("Leq", 125)]
         :return: A dataframe with a continuous Leq computation across dates, for each time period.
         """
-        combi = pd.DataFrame()
+        all_pos = []
         if leq_cols is None:
             leq_cols = ["Leq"]
         for key in self._logs.keys():
             log = self._logs[key]
-            combined_list = []
             # Day
             days = log._get_period(data=log.get_antilogs(), period="days")
             days = days[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
-            days.sort_index(inplace=True)
-            combined_list.append(days)
-            period_headers = ["Daytime" for i in range(len(leq_cols))]
+            # Night-time
+            nights = log._get_period(data=log.get_antilogs(), period="nights")
+            nights = nights[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
+            df = pd.DataFrame
             # Evening
             if log.is_evening():
                 evenings = log._get_period(data=log.get_antilogs(), period="evenings")
-                evenings = evenings[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
-                evenings.sort_index(inplace=True)
-                combined_list.append(evenings)
-                for i in range(len(leq_cols)):
-                    period_headers.append("Evening")
-            # Night Leq
-            nights = log._get_period(data=log.get_antilogs(), period="nights")
-            nights = nights[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
-            nights.sort_index(inplace=True)
-            combined_list.append(nights)
-            for i in range(len(leq_cols)):
-                period_headers.append("Night-time")
-            summary = pd.concat(objs=combined_list, axis=1)
-            # summary = self._insert_multiindex(df=summary, super=key)
-            combi = pd.concat(objs=[combi, summary], axis=0)
-        new_head_dict = {}
-        for i in range(len(period_headers)):
-            new_head_dict[i] = period_headers[i]
-        combi.rename(columns=new_head_dict, inplace=True)
+                evenings = evenings[leq_cols].apply(lambda x: np.round(10 * np.log10(np.mean(x)), DECIMALS))
+                df = pd.concat([days, evenings, nights], axis=1, keys=["Daytime", "Evening", "Night-time"])
+            else:
+                df = pd.concat([days, nights], axis=1, keys=["Daytime", "Night-time"])
+            all_pos.append(df)
+        combi = pd.concat(all_pos, axis=1, keys=["UA1", "UA2"])
         combi = combi.transpose()
         return combi
+
+    # def typical_leq_spectra(self, leq_cols=None):
+    #     """
+    #     DEPRECATED 2025/06/05. Replaced by .leq_spectra() **TT**
+    #     Compute Leqs over daytime, evening and night-time periods.
+    #     This is an overall Leq, and does not group Leqs by date.
+    #     :param leq_cols: List of strings or List of Tuples.
+    #     For all Leq columns, use ["Leq"]. For specific columns, use list of tuples [("Leq", "A"), ("Leq", 125)]
+    #     :return: A dataframe with a continuous Leq computation across dates, for each time period.
+    #     """
+    #     combi = pd.DataFrame()
+    #     if leq_cols is None:
+    #         leq_cols = ["Leq"]
+    #     for key in self._logs.keys():
+    #         log = self._logs[key]
+    #         combined_list = []
+    #         # Day
+    #         days = log._get_period(data=log.get_antilogs(), period="days")
+    #         days = days[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
+    #         #days.sort_index(inplace=True)
+    #         combined_list.append(days)
+    #         period_headers = ["Daytime" for i in range(len(leq_cols))]
+    #         # Evening
+    #         if log.is_evening():
+    #             evenings = log._get_period(data=log.get_antilogs(), period="evenings")
+    #             evenings = evenings[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
+    #             evenings.sort_index(inplace=True)
+    #             combined_list.append(evenings)
+    #             for i in range(len(leq_cols)):
+    #                 period_headers.append("Evening")
+    #         # Night Leq
+    #         nights = log._get_period(data=log.get_antilogs(), period="nights")
+    #         nights = nights[leq_cols].apply(lambda x: np.round(10*np.log10(np.mean(x)), DECIMALS))
+    #         nights.sort_index(inplace=True)
+    #         combined_list.append(nights)
+    #         for i in range(len(leq_cols)):
+    #             period_headers.append("Night-time")
+    #         summary = pd.concat(objs=combined_list, axis=1)
+    #         summary = self._insert_multiindex(df=summary, super=key)
+    #         combi = pd.concat(objs=[combi, summary], axis=0)
+    #     new_head_dict = {}
+    #     for i in range(len(period_headers)):
+    #         new_head_dict[i] = period_headers[i]
+    #     combi.rename(columns=new_head_dict, inplace=True)
+    #     #combi = combi.transpose()
+    #     return combi
+
 
 # Reporter class is a Work In Progress. This class is intended to take a Survey object
 # and export chosen outputs to a Microsoft Excel doc.
