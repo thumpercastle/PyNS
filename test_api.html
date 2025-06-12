@@ -110,20 +110,17 @@
             formData.append('name', logName);
             formData.append('session_id', sessionId);
 
-            const res = await fetch('/survey/add_log', {
+            const res = await fetch('/survey/logs', {
                 method: 'POST',
                 body: formData
             });
 
             document.getElementById('response').textContent = await res.text();
         }
-
         async function getResiSummary() {
             const sessionId = document.getElementById('sessionIdInput').value;
-            const res = await fetch('/survey/resi_summary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: sessionId })
+            const res = await fetch(`/survey/summary?session_id=${encodeURIComponent(sessionId)}`, {
+                method: 'GET'
             });
             document.getElementById('response').textContent = await res.text();
         }

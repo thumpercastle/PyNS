@@ -8,39 +8,25 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import io
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-class GetResRequest(BaseModel):
-    session_id: str = "default"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend domain(s)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+#class GetResRequest(BaseModel):
+#    session_id: str = "default"
 
 class SetPeriodsRequest(BaseModel):
     session_id: str = "default"
     times: Optional[list] = None  # List of time periods to set, e.g., ["day", "evening", "night"]
 
-class GetPeriodsRequest(BaseModel):
-    session_id: str = "default"
-    times: Optional[list] = None  # List of time periods to set, e.g., ["day", "evening", "night"]
-
-class GetL90s(BaseModel):
-    session_id: str = "default"
-    cols: list = None
-    by_date: bool = True
-    day_t: str = "60min" 
-    evening_t: str = "60min"
-    night_t: str = "15min"
-
-class GetLmaxSpectra(BaseModel):
-
-    session_id: str = "default"
-    n: int = 10
-    t: str = "2min"
-    period: str = "nights"
-    
-class GetLAeqSpectra(BaseModel):
-    session_id: str = "default"
-    leq_cols: list = None  
 
 # In-memory store for Survey objects, keyed by session or user id (for demo, use a global singleton)
 survey_store = {}
@@ -54,8 +40,8 @@ def survey_on_load():
     # Set the session ID in a cookie
     return "loaded"
 
-@app.post("/survey/add_log")
-async def survey_add_log(
+@app.post("/survey/logs")
+async def survey_logs(
     file: UploadFile = File(...),
     name: str = Form("name"),
     session_id: str = Form("session_id")
@@ -79,34 +65,35 @@ async def survey_add_log(
     except Exception as e:
         return {"error": f"Failed to read log file: {str(e)}"}
 
-@app.post("/survey/set_periods")
-def survey_set_periods(req: SetPeriodsRequest):
+@app.put("/survey/periods")
+def set_periods(req: SetPeriodsRequest):
     survey = survey_store.get(req.session_id)
     if survey is None:
         return {"error": f"No survey found for {req.session_id} . Please add a log first."}
+    # Todo need to pass a list of times
+    if not req.times:
+        return {"error": "No times provided. Please specify periods to set."}
     survey.set_periods(times=req.times)
     return {"status": "periods set", "session_id": req.session_id}
 
-@app.post("/survey/get_periods")
-def survey_get_periods(req: GetPeriodsRequest ):
-    survey = survey_store.get(req.session_id)
+@app.get("/survey/periods")
+def get_periods(session_id: str):
+    survey = survey_store.get(session_id)
     if survey is None:
         return {"error": "No survey found for this session. Please add a log first."}
-    
-    result = survey.get_periods
+
+    result = survey.get_periods()
     if isinstance(result, pd.DataFrame):
         result = CleanDataFrame(result)
         return result
     else:
         return {"error": f"Expected DataFrame, got {type(result)}"}
 
-@app.post("/survey/resi_summary")
-def survey_resi_summary(req: GetResRequest):
-    print(f"Processing survey_resi_summary for session_id: {req.session_id}")
-    # Defensive: ensure req.session_id exists and is a string
-    session_id = getattr(req, 'session_id', None)
-    if not session_id or not isinstance(session_id, str):
-        return {"error": "session_id is required in the JSON body as a string."}
+@app.get("/survey/summary")
+def get_resi_summary(session_id: str):
+
+    print(f"Processing survey_resi_summary for session_id: {session_id}")
+
     survey = survey_store.get(session_id)
 
     if survey is None:
@@ -120,29 +107,35 @@ def survey_resi_summary(req: GetResRequest):
     else:
         return {"error": f"Expected DataFrame, got {type(result)}"}
 
-@app.post("/survey/modal_l90")
-def survey_modal_l90(req: GetL90s):
-    survey = survey_store.get(req.session_id)
+
+
+@app.get("/survey/modal_l90")
+def survey_modal_l90(session_id: str):
+    survey = survey_store.get(session_id)
     if survey is None:
         return {"error": "No survey found for this session. Please add a log first."}
-    result = survey.modal_l90(cols=req.cols, by_date=req.by_date, day_t=req.day_t, evening_t=req.evening_t, night_t=req.night_t)
+    result = survey.modal_l90(cols=None, by_date=True, day_t="60min", evening_t="60min", night_t="15min")
 
     return result.to_dict()
 
-@app.post("/survey/lmax_spectra")
-def survey_lmax_spectra(req: GetLmaxSpectra):
-    survey = survey_store.get(req.session_id)
+
+
+@app.get("/survey/lmax_spectra")
+def survey_lmax_spectra(session_id: str):
+    survey = survey_store.get(session_id)
     if survey is None:
         return {"error": "No survey found for this session. Please add a log first."}
-    result = survey.lmax_spectra(n=req.n, t=req.t, period=req.period)
+    result = survey.lmax_spectra(n=10, t="2min", period="night")
     return result.to_dict()
 
-@app.post("/survey/typical_leq_spectra")
-def survey_typical_leq_spectra(req: GetLAeqSpectra):
-    survey = survey_store.get(req.session_id)
+
+
+@app.get("/survey/typical_leq_spectra")
+def survey_typical_leq_spectra(session_id: str):
+    survey = survey_store.get(session_id)
     if survey is None:
         return {"error": "No survey found for this session. Please add a log first."}
-    result = survey.typical_leq_spectra(leq_cols=req.leq_cols)
+    result = survey.typical_leq_spectra(leq_cols=None)
     #return result.to_dict(orient='records')
     return result.to_dict(orient='list')
 
