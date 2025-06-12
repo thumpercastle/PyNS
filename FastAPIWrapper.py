@@ -105,7 +105,7 @@ def get_periods(session_id: str):
 
 @app.get("/survey/summary")
 def get_resi_summary(session_id: str):
-        """
+    """
         Get a dataframe summarising the parameters relevant to assessment of internal ambient noise levels in
         UK residential property assessments. Daytime and night-time Leqs, and nth-highest Lmax values all presented
         in a succinct table. These will be summarised as per the daytime, evening and night-time periods set (default
@@ -123,7 +123,7 @@ def get_resi_summary(session_id: str):
         equal to or more than the measurement period. So you cannot measure in 5-minute periods and request 2-minute
         Lmaxes.
         :return: A dataframe presenting a summary of the Leq and Lmax values requested.
-        """
+    """
     print(f"Processing survey_resi_summary for session_id: {session_id}")
 
     survey = survey_store.get(session_id)
