@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from PyNS import Log, Survey
 from typing import Optional
@@ -7,13 +7,10 @@ from uuid import uuid4
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
+import io
+
 
 app = FastAPI()
-
-class AddLogRequest(BaseModel):
-    log_path: str
-    name: str = "Position 1"
-    session_id: str = "default"
 
 class GetResRequest(BaseModel):
     session_id: str = "default"
@@ -58,19 +55,29 @@ def survey_on_load():
     return "loaded"
 
 @app.post("/survey/add_log")
-def survey_add_log(req: AddLogRequest):
-    print(f"Adding log: {req.log_path} with name: {req.name} for session_id: {req.session_id}")
-    if not req.log_path:
-        return {"error": "Log path is required."}
-    session_id = req.session_id
+async def survey_add_log(
+    file: UploadFile = File(...),
+    name: str = Form("name"),
+    session_id: str = Form("session_id")
+):
+    print(f"Adding log: {file.filename} with name: {name} for session_id: {session_id}")
     survey = survey_store.get(session_id)
     if survey is None:
         print(f"Creating new survey for session_id: {session_id}")
         survey = Survey()
         survey_store[session_id] = survey
-    log = Log(req.log_path)
-    survey.add_log(log, req.name)
-    return {"status": f"Log {req.name} added", "session_id": session_id}
+    try:
+        contents = await file.read()
+        print ("contents")
+        df = pd.read_csv(io.StringIO(contents.decode()), index_col="Time", parse_dates=["Time"], dayfirst=True)
+        print ("read")
+        log = Log("", df)
+        print ("log created")
+        survey.add_log(log, name)
+        print(f"Log {name} added successfully for session {session_id}")
+        return {"success": True, "message": f"Log {name} added successfully for session {session_id}"}        
+    except Exception as e:
+        return {"error": f"Failed to read log file: {str(e)}"}
 
 @app.post("/survey/set_periods")
 def survey_set_periods(req: SetPeriodsRequest):

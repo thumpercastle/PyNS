@@ -43,14 +43,24 @@ def check_resi_summary_with_evening():
 
 
 class Log:
-    def __init__(self, path=""):
+
+    def __init__(self, path="", dfFromFastAPI=None):
         """
         The Log class is used to store the measured noise data from one data logger.
         The data must be entered in a .csv file with headings in the specific format "Leq A", "L90 125" etc.
         :param path: the file path for the .csv noise data
         """
         self._filepath = path
-        self._master = pd.read_csv(path, index_col="Time", parse_dates=["Time"], dayfirst=True)
+
+        #ss+++  - Get raw dataframe from FastAPI if provided
+        if self._filepath == "" and dfFromFastAPI is not None:
+            print ("No path provided, using DataFrame from FastAPI")
+            # If no path is provided, but a DataFrame is provided, use that
+            self._master = dfFromFastAPI
+        else:
+            self._master = pd.read_csv(path, index_col="Time", parse_dates=["Time"], dayfirst=True)
+        #ss---
+
         self._master.index = pd.to_datetime(self._master.index)
         self._master = self._master.sort_index(axis=1)
         self._start = self._master.index.min()

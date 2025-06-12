@@ -4,56 +4,128 @@
     <meta charset="UTF-8">
     <title>PyNS Survey API Test</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        label { display: block; margin-top: 1em; }
-        textarea { width: 100%; height: 80px; }
-        pre { background: #f4f4f4; padding: 1em; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 2em;
+            background: #f9f9fb;
+            color: #222;
+        }
+        h1 {
+            color: #2a4d69;
+            margin-bottom: 0.5em;
+        }
+        form {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 1.5em 2em 1em 2em;
+            margin-bottom: 1.5em;
+            max-width: 500px;
+        }
+        label {
+            display: block;
+            margin-top: 1em;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="file"] {
+            margin-top: 0.3em;
+            width: 100%;
+            padding: 0.5em;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 1.5em;
+            padding: 0.7em 1.5em;
+            background: #2a4d69;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1e3550;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 1em;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            max-width: 700px;
+            overflow-x: auto;
+        }
+        .form-group {
+            margin-bottom: 1em;
+        }
     </style>
 </head>
 <body>
-    <h1>Test PyNS Survey .!., API</h1>
-    <form id="addLogForm">
-        <label>Log Path: <input type="text" id="logPath" value="UA1_py.csv"></label>
-        <label>Log Name: <input type="text" id="logName" value="Position 1"></label>
-        <button type="button" onclick="addLog()">Add Log</button>
+    <h1>Test PyNS Survey API</h1>
+    <form id="addLogForm" enctype="multipart/form-data" onsubmit="event.preventDefault(); addLog();">
+        <div class="form-group">
+            <label for="logFileInput">Log File (.csv):</label>
+            <input type="file" name="file" id="logFileInput" accept=".csv" required>
+        </div>
+        <div class="form-group">
+            <label for="logNameInput">Log Name:</label>
+            <input type="text" name="name" id="logNameInput" value="Position 1">
+        </div>
+        <div class="form-group">
+            <label for="sessionIdInput">Session ID:</label>
+            <input type="text" name="session_id" id="sessionIdInput" value="default">
+        </div>
+        <button type="submit">Add Log</button>
     </form>
-    <form id="resiSummaryForm">
-        <button type="button" onclick="getResiSummary()">Get Resi Summary</button>
+    <form id="resiSummaryForm" onsubmit="event.preventDefault(); getResiSummary();">
+        <button type="submit">Get Resi Summary</button>
     </form>
     <h2>Response</h2>
     <pre id="response"></pre>
     <script>
-
-        window.onload = async function() {
+        window.onload = function() {
             let sessionId = localStorage.getItem('session_id');
             if (!sessionId) {
                 sessionId = 'sess-' + Math.floor(Math.random() * 1000000000);
                 localStorage.setItem('session_id', sessionId);
             }
+            document.getElementById('sessionIdInput').value = sessionId;
         };
+
         async function addLog() {
-            const logPath = document.getElementById('logPath').value;
-            const logName = document.getElementById('logName').value;
-            const sessionId = localStorage.getItem('session_id');
+            const fileInput = document.getElementById('logFileInput');
+            const logName = document.getElementById('logNameInput').value;
+            const sessionId = document.getElementById('sessionIdInput').value;
+
+            if (!fileInput.files.length) {
+                alert("Please select a file.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('name', logName);
+            formData.append('session_id', sessionId);
+
             const res = await fetch('/survey/add_log', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ log_path: logPath, name: logName, session_id: sessionId })
+                body: formData
             });
-            //document.getElementById('response').textContent = await res.text();
-            //console.log('session_id in localStorage A :', localStorage.getItem('session_id'));            
-            document.getElementById('response').textContent = "A - " + localStorage.getItem('session_id')
+
+            document.getElementById('response').textContent = await res.text();
         }
+
         async function getResiSummary() {
-            const sessionId = localStorage.getItem('session_id');
+            const sessionId = document.getElementById('sessionIdInput').value;
             const res = await fetch('/survey/resi_summary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session_id: sessionId })
             });
             document.getElementById('response').textContent = await res.text();
-            //console.log('session_id in localStorage B :', localStorage.getItem('session_id'));            
-            //document.getElementById('response').textContent = "B - " + localStorage.getItem('session_id');
         }
     </script>
 </body>
